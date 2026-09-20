@@ -5,3 +5,8 @@ spring:
     url: jdbc:postgresql://localhost:5432/novabank
     username: novabank
     password: novabank
+novabank:
+  kafka:
+    topics:
+      transfer-requested: bank.transfers.requested
+      transfer-requested-dlt: bank.transfers.requested.dlt
