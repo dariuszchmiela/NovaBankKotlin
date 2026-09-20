@@ -1,3 +1,7 @@
 spring:
   application:
     name: NovaBankKotlin
+  datasource:
+    url: jdbc:postgresql://localhost:5432/novabank
+    username: novabank
+    password: novabank
