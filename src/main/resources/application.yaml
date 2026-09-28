@@ -7,6 +7,20 @@ spring:
       acks: all
       properties:
         enable.idempotence: true
+    consumer:
+      group-id: novabank-transfer-consumer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      properties:
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: org.springframework.kafka.support.serializer.JacksonJsonDeserializer
+        spring.json.trusted.packages: pl.dch.novabank.event
+        spring.json.value.default.type: pl.dch.novabank.event.TransferRequestedEvent
+        spring.json.use.type.headers: false
+    listener:
+      ack-mode: manual_immediate
   datasource:
     url: jdbc:postgresql://localhost:5432/novabank
     username: novabank
