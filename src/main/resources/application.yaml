@@ -26,6 +26,7 @@ spring:
     username: novabank
     password: novabank
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: validate
   liquibase:

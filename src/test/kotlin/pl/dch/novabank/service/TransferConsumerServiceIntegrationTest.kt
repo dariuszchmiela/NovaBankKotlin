@@ -23,6 +23,8 @@ class TransferConsumerServiceIntegrationTest(
     @param:Autowired private val processedTransferRepository: ProcessedTransferRepository
 ) : AbstractIntegrationTest() {
 
+    private val sourceAccountId = "ACC-CONSUMER-IT-${UUID.randomUUID()}"
+
     @BeforeEach
     fun cleanProcessedTransfers() {
         processedTransferRepository.deleteAllInBatch()
@@ -36,7 +38,7 @@ class TransferConsumerServiceIntegrationTest(
 
         val processedTransfer = awaitProcessedTransfer(transferId)
         assertEquals(transferId, processedTransfer.transferId)
-        assertEquals(SOURCE_ACCOUNT_ID, processedTransfer.sourceAccountId)
+        assertEquals(sourceAccountId, processedTransfer.sourceAccountId)
         assertEquals(TARGET_ACCOUNT_ID, processedTransfer.targetAccountId)
         assertEquals(AMOUNT, processedTransfer.amount)
         assertEquals(CURRENCY, processedTransfer.currency)
@@ -59,7 +61,7 @@ class TransferConsumerServiceIntegrationTest(
         assertEquals(firstProcessedAt, processedTransferRepository.findById(duplicatedTransferId).orElseThrow().processedAt)
         assertEquals(
             setOf(duplicatedTransferId, nextTransferId),
-            processedTransferRepository.findAll().filter { it.sourceAccountId == SOURCE_ACCOUNT_ID }.map { it.transferId }.toSet()
+            processedTransferRepository.findAll().filter { it.sourceAccountId == sourceAccountId }.map { it.transferId }.toSet()
         )
     }
 
@@ -67,12 +69,12 @@ class TransferConsumerServiceIntegrationTest(
         await().atMost(AWAIT_TIMEOUT).until({ processedTransferRepository.findById(transferId).orElse(null) }, { it != null })
 
     private fun publishEvent(event: TransferRequestedEvent) {
-        kafkaTemplate.send(kafkaTopicsProperties.transferRequested, SOURCE_ACCOUNT_ID, event).get()
+        kafkaTemplate.send(kafkaTopicsProperties.transferRequested, sourceAccountId, event).get()
     }
 
     private fun buildEvent(transferId: UUID) = TransferRequestedEvent(
         transferId = transferId.toString(),
-        sourceAccountId = SOURCE_ACCOUNT_ID,
+        sourceAccountId = sourceAccountId,
         targetAccountId = TARGET_ACCOUNT_ID,
         amount = AMOUNT,
         currency = CURRENCY,
@@ -80,7 +82,6 @@ class TransferConsumerServiceIntegrationTest(
     )
 
     companion object {
-        private const val SOURCE_ACCOUNT_ID = "ACC-SOURCE-CONSUMER-IT"
         private const val TARGET_ACCOUNT_ID = "ACC-TARGET-CONSUMER-IT"
         private val AMOUNT = BigDecimal("500.00")
         private const val CURRENCY = "PLN"

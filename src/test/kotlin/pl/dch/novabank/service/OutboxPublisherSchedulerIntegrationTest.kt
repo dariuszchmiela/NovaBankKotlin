@@ -7,10 +7,14 @@ import org.apache.kafka.common.serialization.StringDeserializer
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import pl.dch.novabank.AbstractIntegrationTest
 import pl.dch.novabank.config.KafkaTopicsProperties
 import pl.dch.novabank.entity.OutboxEvent
+import pl.dch.novabank.event.TransferRequestedEvent
 import pl.dch.novabank.repository.OutboxEventRepository
+import tools.jackson.databind.ObjectMapper
+import java.math.BigDecimal
 import java.time.Duration
 import java.time.Instant
 import java.util.UUID
@@ -21,7 +25,8 @@ import kotlin.test.assertTrue
 class OutboxPublisherSchedulerIntegrationTest(
     @param:Autowired private val outboxPublisherScheduler: OutboxPublisherScheduler,
     @param:Autowired private val outboxEventRepository: OutboxEventRepository,
-    @param:Autowired private val kafkaTopicsProperties: KafkaTopicsProperties
+    @param:Autowired private val kafkaTopicsProperties: KafkaTopicsProperties,
+    @param:Autowired @param:Qualifier("outboxObjectMapper") private val outboxObjectMapper: ObjectMapper
 ) : AbstractIntegrationTest() {
 
     private val testConsumer = KafkaConsumer<String, String>(
@@ -42,7 +47,17 @@ class OutboxPublisherSchedulerIntegrationTest(
     @Test
     fun `should publish pending outbox event to Kafka once and mark it as published`() {
         val messageKey = "ACC-OUTBOX-IT-${UUID.randomUUID()}"
-        val payload = """{"transferId":"${UUID.randomUUID()}","sourceAccountId":"$messageKey","amount":42.00}"""
+        // A complete event, so the application's own listener processes it instead of routing it to the DLT
+        val payload = outboxObjectMapper.writeValueAsString(
+            TransferRequestedEvent(
+                transferId = UUID.randomUUID().toString(),
+                sourceAccountId = messageKey,
+                targetAccountId = "ACC-OUTBOX-IT-TARGET",
+                amount = BigDecimal("42.00"),
+                currency = "PLN",
+                requestedAt = Instant.now()
+            )
+        )
         val outboxEvent = outboxEventRepository.save(
             OutboxEvent(
                 id = UUID.randomUUID(),
