@@ -1,6 +1,12 @@
 spring:
   application:
     name: NovaBankKotlin
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      acks: all
+      properties:
+        enable.idempotence: true
   datasource:
     url: jdbc:postgresql://localhost:5432/novabank
     username: novabank
@@ -15,3 +21,6 @@ novabank:
     topics:
       transfer-requested: bank.transfers.requested
       transfer-requested-dlt: bank.transfers.requested.dlt
+  outbox:
+    poll-interval-ms: 1000
+    publish-timeout-seconds: 5
